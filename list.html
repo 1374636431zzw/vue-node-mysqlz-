@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="./node_modules/vue/dist/vue.js"></script>
+    <script src="./node_modules//axios/dist/axios.js"></script>
+    <link href="./node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+    <div id="app">
+        <form action="" method="GET" ref="formdata" @submit.prevent='handlesubmit' >
+           name:<input type="text" name="name" ref="name">
+           age:<input type="text" name="age" ref='age'>
+           <input type="submit" name=""  > 
+        </form>
+        <div class="col-lg-5">
+                <input type="text" class="form-control" placeholder="Search for..." v-model="keyword" 
+                @input="search()">
+           <!-- /input-group -->
+        </div><!-- /.col-lg-6 -->
+        <table class="table">
+           <thead>
+               <tr>
+                   <td>姓名</td>
+                   <td>年龄</td>
+               </tr>
+            
+           </thead>
+           <tbody>
+                <tr v-for="(item1,index) in list" :key="item1.id">
+                     <td >{{item1.name}}</td>
+                     <td >{{item1.age}}</td>
+                     <td>
+                         <button type="button" class="btn btn-danger" @click='del(item1)'>删除</button>
+                        <el-button type="primary" @click="edit(item1) ">编辑</el-button>
+                        <el-dialog title="编辑信息" :visible.sync="dialogFormVisible">
+                            <el-form :model="form">
+                                <el-form-item label="姓名" :label-width="formLabelWidth">
+                                    <el-input v-model="form.name" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="年龄" :label-width="formLabelWidth">
+                                    <el-input v-model="form.age" autocomplete="off"></el-input>
+                                    </el-select>
+                                </el-form-item>
+                            </el-form>
+                            <div slot="footer" class="dialog-footer">
+                                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                                <el-button type="primary" @click="editsubmit ">确 定</el-button>
+                            </div>
+                        </el-dialog>
+                    </td>	
+                 </tr>
+           </tbody>
+           
+        </table>
+        
+    </div>
+</body>
+<script>
+  let vm = new Vue({
+      el:'#app',
+      data(){
+          return{
+              list:[],
+              keyword:'',
+              searchlist:[],
+              dialogFormVisible:false,
+              form:{
+                  id:'',
+                  name:'',
+                  age:''
+              },
+              formLabelWidth: '120px'
+          }
+      },
+      created(){
+         this.b()
+      },
+      methods:{
+        async  b(){
+              let { data } = await axios.get('http://localhost:8080/')
+              console.log(data)
+              this.list=data
+              this.searchlist=data
+          },
+        //   删除
+        async  del(i){
+              let { data } = await axios.get('http://localhost:8080/delete/'+i.id,{params:{name:i.name}})
+            this.list=data
+          },
+        //   增加
+       async  handlesubmit(){
+           let name= this.$refs.name.value
+           let age= this.$refs.age.value
+           console.log(name,age)
+             if(name&&age){
+                let { data } = await axios.get('http://localhost:8080/add', {
+                     params: {
+                         name:name,
+                         age: age
+                     }
+                 })
+               
+                 this.list = data
+                 this.$refs.name.value=''
+                this.$refs.age.value=''
+            }   
+        },
+        // 查询
+        search(){
+          this.list= this.searchlist.filter(item=>item.name.search(this.keyword)!=-1)
+      },
+    //   编辑按钮
+      edit(i){
+          this.form.id = i.id,
+          this.form.name=i.name,
+          this.form.age=i.age,
+          this.dialogFormVisible = true
+      },
+    //   改数据
+   async editsubmit(){
+        dialogFormVisible = false
+       let { data } = await axios.get('http://localhost:8080/edit/'+this.form.id, {
+           params: this.form
+       })
+       this.list=data
+        this.dialogFormVisible = false
+    }
+      }
+  })
+</script>
+</html>
